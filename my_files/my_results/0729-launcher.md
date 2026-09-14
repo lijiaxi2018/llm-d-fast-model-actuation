@@ -1,0 +1,313 @@
+## Launcher DRAM Usage
+PSS: 0.887 GiB
+RSS: 0.897 GiB
+
+## 8B
+Model Size: 16G
+Model Loading: 15.27 GiB
+
+Cold Start: 34s / 35s / 35s = 35
+
+VRAM: 16699MiB /  46068MiB
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.844 GiB
+RSS: 2.015 GiB
+
+Cold Shutdown: 0m0.320s / 0m2.992s / 0m0.290s / 0m0.320s = 0.98s
+
+### CPU Snapshotting
+Dump: 0m7.458s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 18.091 GiB
+RSS: 18.262 GiB
+
+Restore: 0m3.719s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.844 GiB
+RSS: 2.015 GiB
+
+### GPU Snapshotting
+Dump: 0m24.640s
+
+Disk: 19G
+
+Restore: 0m25.025s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.995 GiB
+RSS: 1.000 GiB
+$ENGINE_PID
+PSS: 1.469 GiB
+RSS: 1.479 GiB
+
+### Sleep L1
+Dump: 0m8.529s
+
+VRAM: 665MiB /  46068MiB
+
+DRAM: 
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 22.650 GiB
+RSS: 22.820 GiB
+
+Restore: 0m1.161s
+
+DRAM: 
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 22.650 GiB
+RSS: 22.820 GiB
+
+### Sleep L2
+Dump: 0m0.229s
+
+VRAM: 623MiB /  46068MiB
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.052 GiB
+$ENGINE_PID
+PSS: 1.765 GiB
+RSS: 1.936 GiB
+
+Restore:
+real    0m0.219s
+real    0m11.879s
+real    0m0.022s
+12.12
+
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.052 GiB
+$ENGINE_PID
+PSS: 1.767 GiB
+RSS: 1.937 GiB
+
+## 14B
+Model Size: 28G
+Model Loading: 27.52 GiB
+
+Cold Start: 68s / 45s / 44s / 44s = 44
+
+
+VRAM: 29165MiB /  46068MiB
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.856 GiB
+RSS: 2.026 GiB
+
+Cold Shutdown: 0m0.273s / 0m0.308s / 0m5.547s / 0m0.309s =  1.60925
+
+### CPU Snapshotting
+Dump: 0m12.112s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 30.277 GiB
+RSS: 30.448 GiB
+
+Restore: 0m5.559s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.856 GiB
+RSS: 2.027 GiB
+
+### GPU Snapshotting
+Dump: 0m33.374s
+
+Disk: 31G
+
+Restore: 0m35.092s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 1.015 GiB
+RSS: 1.020 GiB
+$ENGINE_PID
+PSS: 1.476 GiB
+RSS: 1.486 GiB
+
+### Sleep L1
+Dump: 0m16.310s
+
+VRAM: 707MiB /  46068MiB
+
+DRAM: 
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 43.276 GiB
+RSS: 43.446 GiB
+
+Restore: 0m2.073s
+
+DRAM: 
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 43.276 GiB
+RSS: 43.446 GiB
+
+### Sleep L2
+Dump: 0m0.275s
+
+VRAM: 625MiB /  46068MiB
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.768 GiB
+RSS: 1.939 GiB
+
+Restore:
+real    0m0.333s
+real    0m20.812s
+real    0m0.024s
+21.169
+
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.770 GiB
+RSS: 1.941 GiB
+
+## 4B
+Model Size: 7.6G
+Model Loading: 7.56 GiB
+
+Cold Start: 57s / 30s / 30s / 30s = 30
+
+VRAM: 8801MiB /  46068MiB
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.050 GiB
+$ENGINE_PID
+PSS: 1.839 GiB
+RSS: 2.010 GiB
+
+Cold Shutdown: 0m0.274s / 0m0.305s / 0m1.597s / 0m0.290s = 0.6165
+
+### CPU Snapshotting
+Dump: 0m4.586s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.050 GiB
+$ENGINE_PID
+PSS: 10.373 GiB
+RSS: 10.544 GiB
+
+Restore: 0m2.516s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.050 GiB
+$ENGINE_PID
+PSS: 1.839 GiB
+RSS: 2.010 GiB
+
+### GPU Snapshotting
+Dump: 0m18.655s
+
+Disk: 11G
+
+Restore: 0m17.844s
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 1.011 GiB
+RSS: 1.015 GiB
+$ENGINE_PID
+PSS: 1.466 GiB
+RSS: 1.475 GiB
+
+### Sleep L1
+Dump: 0m3.959s
+
+VRAM: 643MiB /  46068MiB
+
+DRAM: 
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 11.774 GiB
+RSS: 11.945 GiB
+
+Restore: 0m0.593s
+
+DRAM: 
+$VLLM_ROOT_PID
+PSS: 0.841 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 11.774 GiB
+RSS: 11.945 GiB
+
+### Sleep L2
+Dump: 0m0.190s
+
+VRAM: 623MiB /  46068MiB
+
+DRAM:
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.763 GiB
+RSS: 1.933 GiB
+
+Restore:
+real    0m0.189s
+real    0m6.092s
+real    0m0.023s
+6.304
+
+$VLLM_ROOT_PID
+PSS: 0.842 GiB
+RSS: 1.051 GiB
+$ENGINE_PID
+PSS: 1.765 GiB
+RSS: 1.935 GiB
