@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE=docker.io/vllm/vllm-openai:v0.26.0
+FROM ${BASE_IMAGE}
+
+USER root
+
+ARG CRIU_VERSION=4.2.1
+ARG CRIU_BUILD_JOBS=4
+
+# Build dependencies also provide the required runtime libraries.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates curl \
+        build-essential pkg-config \
+        protobuf-compiler protobuf-c-compiler \
+        libprotobuf-dev libprotobuf-c-dev \
+        libcap-dev libnl-3-dev libnet1-dev \
+        libbsd-dev uuid-dev libnftables-dev \
+        iproute2 procps tar gzip && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build the CRIU executable. CUDA transitions are managed by the launcher,
+# so the CRIU CUDA plugin is not installed.
+RUN mkdir -p /tmp/criu-src && \
+    curl -fL --retry 3 \
+        "https://github.com/checkpoint-restore/criu/archive/refs/tags/v${CRIU_VERSION}.tar.gz" \
+        -o /tmp/criu.tar.gz && \
+    tar -xzf /tmp/criu.tar.gz \
+        --strip-components=1 -C /tmp/criu-src && \
+    make -C /tmp/criu-src -j"${CRIU_BUILD_JOBS}" criu && \
+    install -m 0755 /tmp/criu-src/criu/criu /usr/local/sbin/criu && \
+    /usr/local/sbin/criu --version && \
+    rm -rf /tmp/criu-src /tmp/criu.tar.gz
+
+# NVIDIA cuda-checkpoint, pinned to an upstream commit and verified checksum.
+ADD --checksum=sha256:707fa7f54136824d6c1d6dd724b9b1717610f831033c00d06da474de363a06db \
+    https://raw.githubusercontent.com/NVIDIA/cuda-checkpoint/00d5cce84c628088d6caa203fc4af40c1538b6f7/bin/x86_64_Linux/cuda-checkpoint \
+    /usr/local/bin/cuda-checkpoint
+
+RUN chmod 0755 /usr/local/bin/cuda-checkpoint
+
+ENV CUDA_CHECKPOINT_BIN=/usr/local/bin/cuda-checkpoint \
+    CRIU_BIN=/usr/local/sbin/criu \
+    FMA_CRIU_ROOT=/var/lib/fma-criu
+
+RUN mkdir -p /var/lib/fma-criu && \
+    chgrp 0 /var/lib/fma-criu && \
+    chmod 0770 /var/lib/fma-criu
+
+WORKDIR /app
+
+# vLLM 0.22+ (torch 2.x) computes a per-user inductor cache dir at import via
+# torch's default_cache_dir() -> getpass.getuser() -> pwd.getpwuid(). Under
+# OpenShift's restricted-v2 SCC the arbitrary UID has no /etc/passwd entry, so
+# this raises KeyError. No cache-dir env var avoids it: codecache.py calls
+# default_cache_dir() directly for a deliberately-global header cache (bypassing
+# TORCHINDUCTOR_CACHE_DIR), and default_cache_dir() has no env override. Seeding
+# USER makes getpass.getuser() read the env instead of /etc/passwd.
+# See https://github.com/vllm-project/vllm/issues/44548
+ENV USER=vllm
+
+COPY inference_server/launcher/launcher.py inference_server/launcher/gputranslator.py inference_server/launcher/launcher_pod_notifier.py /app/
+
+# Install uvicorn for serving the launcher API, nvidia-ml-py for gputranslator and kubernetes
+RUN pip install --root-user-action=ignore --no-cache-dir uvicorn nvidia-ml-py kubernetes==34.1.0 psutil==7.2.2
+
+# This image is only intended to be run from a Pod that sets `command`.
+ENTRYPOINT []

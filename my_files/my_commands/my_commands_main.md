@@ -1,3 +1,13 @@
+## io_uring
+### Check
+sysctl kernel.io_uring_disabled
+
+### Disable
+sudo sysctl kernel.io_uring_disabled=2
+
+### Enable
+sudo sysctl kernel.io_uring_disabled=0
+
 ## Export Model Path
 export HF_HOME=/nvme/jiaxili3/hf
 
@@ -9,10 +19,10 @@ export PATH="/usr/local/cuda-12.8/bin:$PATH"
 export LD_LIBRARY_PATH="/usr/local/cuda-12.8/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 ## Export cuda-checkpoint Path
-export PATH=/nvme/jiaxili3/Research/swcr/SWCR/cuda-checkpoint/bin/x86_64_Linux:$PATH
+export PATH=/nvme/jiaxili3/Research/snapshotting/cuda-checkpoint/bin/x86_64_Linux:$PATH
 
 ## Export criu paths
-export CUDA_CHECKPOINT_DIR=/nvme/jiaxili3/Research/swcr/SWCR/cuda-checkpoint/bin/x86_64_Linux
+export CUDA_CHECKPOINT_DIR=/nvme/jiaxili3/Research/snapshotting/cuda-checkpoint/bin/x86_64_Linux
 export VENV_PYTHON="$(command -v python3)"
 export VENV_BIN="$(dirname "$VENV_PYTHON")"
 export FMA_CRIU_ROOT=/nvme/jiaxili3/Research/fma/checkpoints
@@ -26,15 +36,8 @@ sudo -E env \
         --port 8001 \
         --log-level info
 
-nvidia-smi
-nvidia-smi -L
-
 curl -sS http://127.0.0.1:8001/health
 curl -sS http://127.0.0.1:8001/v2/vllm/instances
-
-## Drop Page Cache
-sync
-echo 3 | sudo tee /proc/sys/vm/drop_caches
 
 ## Start a vLLM
 export INSTANCE_ID=qwen3-4b-local
@@ -79,78 +82,43 @@ curl -sS \
 curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}"
 
 curl -sS -X DELETE "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}"
+sudo du -sh "$CHECKPOINT_DIR"
+sudo rm -r $CHECKPOINT_DIR
+sudo du -sh "$CHECKPOINT_DIR"
 
-## cuda-checkpoint
-time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/cuda-checkpoint/toggle"
+## nvidia-smi
+nvidia-smi
+nvidia-smi -L
 
-## criu
-time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/criu/checkpoint"
+## Checkpoint
+curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" | jq
+nvidia-smi
 
-time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/criu/restore"
+### cuda-checkpoint --checkpoint
+time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/cuda/checkpoint" | jq
+curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" | jq
+nvidia-smi
 
-### Level 1 Sleep
-time curl -X POST 'http://127.0.0.1:8000/sleep?level=1'
-time curl -X POST 'http://127.0.0.1:8000/wake_up'
+### criu --dump
+time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/disk/checkpoint" | jq
+curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" | jq
 
-curl -sS 'http://127.0.0.1:8000/is_sleeping'
+### check snapshot
+CHECKPOINT_DIR=$(curl -sS \
+  "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" |
+  jq -er 'select(.status == "checkpointed_disk") | .checkpoint_dir')
 
-### Level 2 Sleep
-time curl -X POST 'http://127.0.0.1:8000/sleep?level=2'
-time curl -X POST 'http://127.0.0.1:8000/wake_up?tags=weights'
-time curl -X POST 'http://127.0.0.1:8000/collective_rpc' -H 'Content-Type: application/json' -d '{"method":"reload_weights"}'
-time curl -X POST 'http://127.0.0.1:8000/wake_up?tags=kv_cache'
+sudo du -sh "$CHECKPOINT_DIR"
+sudo tail -5 "$CHECKPOINT_DIR/dump.log"
 
-## General DRAM Usage Check
-PROCESS_PID=2352732
+### criu --restore only
+time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/disk/restore" | jq
+curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" | jq
 
-echo PROCESS_PID=$PROCESS_PID
+### criu --restore with cuda-checkpoint --restore
+time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/disk/restore?resume=true" | jq
+curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" | jq
 
-sudo awk '
-/^Pss:/ {pss=$2}
-/^Rss:/ {rss=$2}
-END {
-    printf "PSS: %.3f GiB\n", pss / 1048576
-    printf "RSS: %.3f GiB\n", rss / 1048576
-}
-' "/proc/$PROCESS_PID/smaps_rollup"
-
-INSTANCE_ID=qwen3-8b-local
-FMA_CRIU_ROOT="${FMA_CRIU_ROOT:-/var/lib/fma-criu}"
-
-## vllm DRAM Usage Check
-VLLM_ROOT_PID=2390166
-ENGINE_PID=2390231
-
-for PID in "$VLLM_ROOT_PID" "$ENGINE_PID"; do
-    echo "PID $PID"
-
-    sudo awk '
-    /^Pss:/ {pss=$2}
-    /^Rss:/ {rss=$2}
-    END {
-        printf "PSS: %.3f GiB\n", pss / 1048576
-        printf "RSS: %.3f GiB\n", rss / 1048576
-    }
-    ' "/proc/$PID/smaps_rollup"
-done
-
-## Check Raw Model Size
-sudo du -sh "/nvme/jiaxili3/hf/hub/models--Qwen--Qwen3-4B"
-
-## Check Image Size
-INSTANCE_ID=qwen3-4b-local
-sudo du -sh "/nvme/jiaxili3/Research/fma/checkpoints/$INSTANCE_ID/images"
-
-## Find Root PID
-ENGINE_PID=2390231
-
-VLLM_ROOT_PID=$(
-  ps -o ppid= -p "$ENGINE_PID" |
-  tr -d ' '
-)
-
-echo "engine_pid=$ENGINE_PID"
-echo "vllm_root_pid=$VLLM_ROOT_PID"
-
-ps -o pid,ppid,pgid,stat,cmd \
-  -p "$VLLM_ROOT_PID","$ENGINE_PID"
+### cuda-checkpoint --restore
+time curl -sS -X POST "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}/cuda/restore" | jq
+curl -sS "http://127.0.0.1:8001/v2/vllm/instances/${INSTANCE_ID}" | jq
